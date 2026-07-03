@@ -436,7 +436,7 @@ export default function Editor({
 
       <main className="max-w-5xl mx-auto px-6 py-10 space-y-14">
         {/* Page settings */}
-        <section className="bg-paper rounded-3xl border border-ink/5 shadow-lift p-6 sm:p-8">
+        <section className="bg-paper rounded-3xl border border-ink/5 shadow-lift p-6 sm:p-8 overflow-hidden">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <h1 className="font-display font-extrabold tracking-tight text-2xl">
               Your page<span className="text-coral">.</span>
@@ -453,7 +453,7 @@ export default function Editor({
           </div>
 
           <div className="mt-6 grid sm:grid-cols-2 gap-5">
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-bold mb-1.5" htmlFor="page-title">
                 Page title
               </label>
@@ -464,16 +464,17 @@ export default function Editor({
                 onBlur={(e) => {
                   if (e.target.value !== (profile.page_title ?? "")) saveProfile({ page_title: e.target.value });
                 }}
-                className="w-full rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-2.5 font-semibold outline-none focus:border-teal"
+                className="w-full min-w-0 rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-2.5 font-semibold outline-none focus:border-teal"
               />
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-sm font-bold mb-1.5" htmlFor="page-slug">
                 Share link
               </label>
-              <div className="flex items-center rounded-xl border-2 border-ink/10 bg-cream/60 focus-within:border-teal overflow-hidden">
-                <span className="pl-4 pr-1 text-sm text-ink-faint font-semibold whitespace-nowrap">
-                  {origin ? origin.replace(/^https?:\/\//, "") : ""}/w/
+              <div className="flex items-center min-w-0 rounded-xl border-2 border-ink/10 bg-cream/60 focus-within:border-teal overflow-hidden">
+                <span className="pl-4 pr-1 text-sm text-ink-faint font-semibold whitespace-nowrap shrink-0">
+                  {/* the full host only fits comfortably on wider screens */}
+                  <span className="hidden md:inline">{origin ? origin.replace(/^https?:\/\//, "") : ""}</span>/w/
                 </span>
                 <input
                   id="page-slug"
@@ -485,7 +486,7 @@ export default function Editor({
                 />
               </div>
             </div>
-            <div className="sm:col-span-2">
+            <div className="sm:col-span-2 min-w-0">
               <label className="block text-sm font-bold mb-1.5" htmlFor="page-intro">
                 Introduction
               </label>
@@ -497,7 +498,7 @@ export default function Editor({
                 onBlur={(e) => {
                   if (e.target.value !== (profile.intro ?? "")) saveProfile({ intro: e.target.value });
                 }}
-                className="w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 font-note italic text-base sm:text-[15px] leading-relaxed outline-none focus:border-teal placeholder:not-italic placeholder:font-display placeholder:text-ink-faint"
+                className="w-full min-w-0 max-w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 font-note italic text-base sm:text-[15px] leading-relaxed outline-none focus:border-teal placeholder:not-italic placeholder:font-display placeholder:text-ink-faint"
               />
             </div>
           </div>
