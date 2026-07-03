@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/session";
-import { updateNote, deleteItem, moveItem, listItems } from "@/lib/db";
+import { updateNote, deleteItem } from "@/lib/db";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -10,7 +10,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
   const { id } = await ctx.params;
   const itemId = Number(id);
 
-  let body: { note?: string; move?: "up" | "down" };
+  let body: { note?: string };
   try {
     body = await req.json();
   } catch {
@@ -21,11 +21,6 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const ok = await updateNote(user.id, itemId, body.note);
     if (!ok) return NextResponse.json({ error: "Not found." }, { status: 404 });
     return NextResponse.json({ ok: true });
-  }
-
-  if (body.move === "up" || body.move === "down") {
-    await moveItem(user.id, itemId, body.move);
-    return NextResponse.json({ ok: true, items: await listItems(user.id) });
   }
 
   return NextResponse.json({ error: "Nothing to update." }, { status: 400 });

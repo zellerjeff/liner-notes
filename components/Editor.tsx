@@ -3,6 +3,23 @@
 import { useCallback, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+  sortableKeyboardCoordinates,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Logo } from "@/components/Logo";
 import PlayButton from "@/components/PlayButton";
 
@@ -59,19 +76,10 @@ function Artwork({ item, size = "w-16 h-16" }: { item: Item; size?: string }) {
   );
 }
 
-function ItemRow({
-  item,
-  isFirst,
-  isLast,
-  onMove,
-  onDelete,
-}: {
-  item: Item;
-  isFirst: boolean;
-  isLast: boolean;
-  onMove: (id: number, dir: "up" | "down") => void;
-  onDelete: (id: number) => void;
-}) {
+function ItemRow({ item, onDelete }: { item: Item; onDelete: (id: number) => void }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.id,
+  });
   const [note, setNote] = useState(item.note);
   const [status, setStatus] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [confirming, setConfirming] = useState(false);
@@ -102,24 +110,6 @@ function ItemRow({
   const controls = (
     <>
       {item.preview_url && <PlayButton url={item.preview_url} accent="bg-violet" />}
-      <button
-        type="button"
-        disabled={isFirst}
-        onClick={() => onMove(item.id, "up")}
-        title="Move up"
-        className="w-9 h-9 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
-      >
-        ↑
-      </button>
-      <button
-        type="button"
-        disabled={isLast}
-        onClick={() => onMove(item.id, "down")}
-        title="Move down"
-        className="w-9 h-9 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
-      >
-        ↓
-      </button>
       {confirming ? (
         <button
           type="button"
@@ -143,8 +133,31 @@ function ItemRow({
   );
 
   return (
-    <li className="bg-paper rounded-2xl border border-ink/5 shadow-lift p-4 sm:p-5">
-      <div className="flex gap-4">
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={`bg-paper rounded-2xl border border-ink/5 shadow-lift p-4 sm:p-5 ${
+        isDragging ? "relative z-10 shadow-2xl ring-2 ring-sunshine" : ""
+      }`}
+    >
+      <div className="flex gap-3 sm:gap-4">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          title="Drag to reorder (or press space, then arrow keys)"
+          className="shrink-0 self-stretch -my-1 px-1.5 flex items-center rounded-lg text-ink-faint hover:text-ink hover:bg-cream touch-none cursor-grab active:cursor-grabbing"
+        >
+          <svg width="10" height="18" viewBox="0 0 10 18" fill="currentColor" aria-hidden="true">
+            <circle cx="2.5" cy="2.5" r="1.7" />
+            <circle cx="7.5" cy="2.5" r="1.7" />
+            <circle cx="2.5" cy="9" r="1.7" />
+            <circle cx="7.5" cy="9" r="1.7" />
+            <circle cx="2.5" cy="15.5" r="1.7" />
+            <circle cx="7.5" cy="15.5" r="1.7" />
+          </svg>
+          <span className="sr-only">Drag to reorder</span>
+        </button>
         <Artwork item={item} />
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
@@ -269,6 +282,44 @@ function ImportBox({
   );
 }
 
+function SortableList({
+  id,
+  items,
+  onReorder,
+  onDelete,
+}: {
+  id: string;
+  items: Item[];
+  onReorder: (ids: number[]) => void;
+  onDelete: (id: number) => void;
+}) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const ids = items.map((i) => i.id);
+    const next = arrayMove(ids, ids.indexOf(Number(active.id)), ids.indexOf(Number(over.id)));
+    onReorder(next);
+  }
+
+  return (
+    // explicit id keeps dnd-kit's generated aria ids stable across SSR and client
+    <DndContext id={id} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+        <ul className="mt-6 space-y-4">
+          {items.map((item) => (
+            <ItemRow key={item.id} item={item} onDelete={onDelete} />
+          ))}
+        </ul>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
 function useToast(): [string | null, (msg: string) => void] {
   const [toast, setToast] = useState<string | null>(null);
   const show = useCallback((msg: string) => {
@@ -320,10 +371,16 @@ export default function Editor({
       .catch((e) => setProfileError(e instanceof Error ? e.message : "Couldn't save."));
   }
 
-  function handleMove(id: number, dir: "up" | "down") {
-    api<{ items: Item[] }>(`/api/items/${id}`, { method: "PATCH", body: JSON.stringify({ move: dir }) })
-      .then((res) => setItems(res.items))
-      .catch(() => showToast("Couldn't reorder — try again."));
+  function handleReorder(kind: "song" | "album", orderedIds: number[]) {
+    const prev = items;
+    const byId = new Map(items.map((i) => [i.id, i]));
+    const reordered = orderedIds.map((id) => byId.get(id)).filter((i): i is Item => !!i);
+    const others = items.filter((i) => i.kind !== kind);
+    setItems(kind === "song" ? [...reordered, ...others] : [...others, ...reordered]);
+    api("/api/reorder", { method: "POST", body: JSON.stringify({ kind, ids: orderedIds }) }).catch(() => {
+      setItems(prev);
+      showToast("Couldn't save the new order — try again.");
+    });
   }
 
   function handleDelete(id: number) {
@@ -466,18 +523,7 @@ export default function Editor({
               No songs yet. In Spotify or Apple Music, hit Share → Copy Link on a playlist, then paste it above.
             </div>
           ) : (
-            <ul className="mt-6 space-y-4">
-              {songs.map((item, i) => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  isFirst={i === 0}
-                  isLast={i === songs.length - 1}
-                  onMove={handleMove}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </ul>
+            <SortableList id="songs" items={songs} onReorder={(ids) => handleReorder("song", ids)} onDelete={handleDelete} />
           )}
         </section>
 
@@ -500,18 +546,7 @@ export default function Editor({
               No albums yet. Share → Copy Link on an album page, then paste it above.
             </div>
           ) : (
-            <ul className="mt-6 space-y-4">
-              {albums.map((item, i) => (
-                <ItemRow
-                  key={item.id}
-                  item={item}
-                  isFirst={i === 0}
-                  isLast={i === albums.length - 1}
-                  onMove={handleMove}
-                  onDelete={handleDelete}
-                />
-              ))}
-            </ul>
+            <SortableList id="albums" items={albums} onReorder={(ids) => handleReorder("album", ids)} onDelete={handleDelete} />
           )}
         </section>
 

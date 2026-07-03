@@ -248,25 +248,27 @@ export async function deleteItem(userId: number, itemId: number): Promise<boolea
   return res.rowsAffected > 0;
 }
 
-export async function moveItem(
+/** Persist a full drag-and-drop ordering for one section. `ids` must be a
+ *  complete permutation of the user's items of that kind. */
+export async function reorderItems(
   userId: number,
-  itemId: number,
-  direction: "up" | "down"
+  kind: ItemKind,
+  ids: number[]
 ): Promise<boolean> {
-  const item = await one<Item>("SELECT * FROM items WHERE id = ? AND user_id = ?", [itemId, userId]);
-  if (!item) return false;
-  const neighbor = await one<Item>(
-    direction === "up"
-      ? "SELECT * FROM items WHERE user_id = ? AND kind = ? AND position < ? ORDER BY position DESC LIMIT 1"
-      : "SELECT * FROM items WHERE user_id = ? AND kind = ? AND position > ? ORDER BY position ASC LIMIT 1",
-    [userId, item.kind, item.position]
+  const rows = await all<{ id: number }>(
+    "SELECT id FROM items WHERE user_id = ? AND kind = ?",
+    [userId, kind]
   );
-  if (!neighbor) return false;
+  const owned = new Set(rows.map((r) => Number(r.id)));
+  const unique = new Set(ids);
+  if (unique.size !== ids.length || ids.length !== owned.size || !ids.every((id) => owned.has(id))) {
+    return false;
+  }
   await (await db()).batch(
-    [
-      { sql: "UPDATE items SET position = ? WHERE id = ?", args: [neighbor.position, item.id] },
-      { sql: "UPDATE items SET position = ? WHERE id = ?", args: [item.position, neighbor.id] },
-    ],
+    ids.map((id, i) => ({
+      sql: "UPDATE items SET position = ? WHERE id = ? AND user_id = ?",
+      args: [i + 1, id, userId] as InArgs,
+    })),
     "write"
   );
   return true;
