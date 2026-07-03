@@ -57,7 +57,7 @@ export function Logo({ size = 34, href = "/" }: { size?: number; href?: string }
   return (
     <Link href={href} className="flex items-center gap-2.5 group">
       <LogoMark size={size} />
-      <span className="font-display font-extrabold tracking-tight text-xl text-ink">
+      <span className="font-display font-extrabold tracking-tight text-xl text-ink whitespace-nowrap">
         Liner Notes<span className="text-coral">.</span>
       </span>
     </Link>

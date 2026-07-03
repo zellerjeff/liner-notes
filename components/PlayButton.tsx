@@ -48,7 +48,7 @@ export default function PlayButton({ url, accent = "bg-ink" }: { url: string; ac
       type="button"
       onClick={toggle}
       title={playing ? "Stop preview" : "Play 30-second preview"}
-      className={`shrink-0 w-8 h-8 rounded-full ${accent} text-white flex items-center justify-center transition-transform hover:scale-110 cursor-pointer`}
+      className={`shrink-0 w-9 h-9 rounded-full ${accent} text-white flex items-center justify-center transition-transform hover:scale-110 cursor-pointer`}
     >
       {playing ? (
         <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden="true">

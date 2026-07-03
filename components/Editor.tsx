@@ -99,6 +99,49 @@ function ItemRow({
     timer.current = setTimeout(() => save(value), 900);
   }
 
+  const controls = (
+    <>
+      {item.preview_url && <PlayButton url={item.preview_url} accent="bg-violet" />}
+      <button
+        type="button"
+        disabled={isFirst}
+        onClick={() => onMove(item.id, "up")}
+        title="Move up"
+        className="w-9 h-9 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
+      >
+        ↑
+      </button>
+      <button
+        type="button"
+        disabled={isLast}
+        onClick={() => onMove(item.id, "down")}
+        title="Move down"
+        className="w-9 h-9 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
+      >
+        ↓
+      </button>
+      {confirming ? (
+        <button
+          type="button"
+          onClick={() => onDelete(item.id)}
+          onMouseLeave={() => setConfirming(false)}
+          className="h-9 px-3 rounded-full bg-coral text-white text-xs font-bold cursor-pointer"
+        >
+          Sure?
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          title="Remove"
+          className="w-9 h-9 rounded-full bg-cream hover:bg-blush hover:text-coral-deep text-ink-soft font-bold cursor-pointer"
+        >
+          ✕
+        </button>
+      )}
+    </>
+  );
+
   return (
     <li className="bg-paper rounded-2xl border border-ink/5 shadow-lift p-4 sm:p-5">
       <div className="flex gap-4">
@@ -118,56 +161,19 @@ function ItemRow({
                     href={item.source_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[11px] font-semibold text-ink-faint hover:text-ink underline underline-offset-2"
+                    className="text-[11px] font-semibold text-ink-faint hover:text-ink underline underline-offset-2 whitespace-nowrap"
                   >
                     Open ↗
                   </a>
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {item.preview_url && <PlayButton url={item.preview_url} accent="bg-violet" />}
-              <button
-                type="button"
-                disabled={isFirst}
-                onClick={() => onMove(item.id, "up")}
-                title="Move up"
-                className="w-8 h-8 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                disabled={isLast}
-                onClick={() => onMove(item.id, "down")}
-                title="Move down"
-                className="w-8 h-8 rounded-full bg-cream hover:bg-butter text-ink-soft font-bold disabled:opacity-30 cursor-pointer disabled:cursor-default"
-              >
-                ↓
-              </button>
-              {confirming ? (
-                <button
-                  type="button"
-                  onClick={() => onDelete(item.id)}
-                  onMouseLeave={() => setConfirming(false)}
-                  className="h-8 px-3 rounded-full bg-coral text-white text-xs font-bold cursor-pointer"
-                >
-                  Sure?
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => setConfirming(true)}
-                  title="Remove"
-                  className="w-8 h-8 rounded-full bg-cream hover:bg-blush hover:text-coral-deep text-ink-soft font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
-              )}
-            </div>
+            {/* controls sit beside the title on desktop, on their own row on phones */}
+            <div className="hidden sm:flex items-center gap-1.5 shrink-0">{controls}</div>
           </div>
         </div>
       </div>
+      <div className="flex sm:hidden items-center justify-end gap-2 mt-3">{controls}</div>
       <div className="mt-3 relative">
         <textarea
           value={note}
@@ -182,7 +188,7 @@ function ItemRow({
               : "Why this album? Where were you when it had you on repeat?"
           }
           rows={2}
-          className="w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 text-[15px] font-note italic leading-relaxed outline-none focus:border-sunshine placeholder:text-ink-faint placeholder:not-italic placeholder:font-display"
+          className="w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 text-base sm:text-[15px] font-note italic leading-relaxed outline-none focus:border-sunshine placeholder:text-ink-faint placeholder:not-italic placeholder:font-display"
         />
         <span className="absolute right-3 -bottom-1.5 text-[11px] font-bold">
           {status === "saving" && <span className="text-ink-faint">Saving…</span>}
@@ -338,27 +344,32 @@ export default function Editor({
     <div className="flex-1">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-cream/90 backdrop-blur border-b border-ink/10">
-        <div className="max-w-5xl mx-auto px-6 py-3.5 flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-2 sm:gap-4">
           <Logo size={30} />
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <Link
               href={`/w/${profile.slug}`}
               target="_blank"
-              className="hidden sm:block text-sm font-bold text-ink-soft hover:text-ink px-3 py-2"
+              className="hidden sm:block text-sm font-bold text-ink-soft hover:text-ink px-3 py-2 whitespace-nowrap"
             >
               Preview ↗
             </Link>
             <button
               type="button"
               onClick={copyShare}
-              className="text-sm font-bold bg-sunshine text-ink px-4 py-2 rounded-full hover:bg-sunshine-deep transition-colors cursor-pointer"
+              className="text-sm font-bold bg-sunshine text-ink px-3 sm:px-4 py-2 rounded-full hover:bg-sunshine-deep transition-colors cursor-pointer whitespace-nowrap"
             >
-              {copied ? "Copied! ✓" : "Copy share link"}
+              {copied ? "Copied! ✓" : (
+                <>
+                  <span className="sm:hidden">Copy link</span>
+                  <span className="hidden sm:inline">Copy share link</span>
+                </>
+              )}
             </button>
             <button
               type="button"
               onClick={() => void signOut({ redirectTo: "/" })}
-              className="text-sm font-bold text-ink-soft hover:text-coral-deep px-2 py-2 cursor-pointer"
+              className="text-sm font-bold text-ink-soft hover:text-coral-deep px-2 py-2 cursor-pointer whitespace-nowrap"
             >
               Sign out
             </button>
@@ -429,7 +440,7 @@ export default function Editor({
                 onBlur={(e) => {
                   if (e.target.value !== (profile.intro ?? "")) saveProfile({ intro: e.target.value });
                 }}
-                className="w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 font-note italic text-[15px] leading-relaxed outline-none focus:border-teal placeholder:not-italic placeholder:font-display placeholder:text-ink-faint"
+                className="w-full resize-y rounded-xl border-2 border-ink/10 bg-cream/60 px-4 py-3 font-note italic text-base sm:text-[15px] leading-relaxed outline-none focus:border-teal placeholder:not-italic placeholder:font-display placeholder:text-ink-faint"
               />
             </div>
           </div>

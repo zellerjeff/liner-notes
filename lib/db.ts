@@ -95,14 +95,16 @@ async function db(): Promise<Client> {
   return client;
 }
 
+// libsql Row objects expose columns via getters, which React refuses to pass
+// from Server to Client Components — copy them into plain objects.
 async function one<T>(sql: string, args: InArgs = []): Promise<T | undefined> {
   const res = await (await db()).execute({ sql, args });
-  return res.rows[0] as T | undefined;
+  return res.rows[0] ? ({ ...res.rows[0] } as T) : undefined;
 }
 
 async function all<T>(sql: string, args: InArgs = []): Promise<T[]> {
   const res = await (await db()).execute({ sql, args });
-  return res.rows as T[];
+  return res.rows.map((r) => ({ ...r }) as T);
 }
 
 function slugify(input: string): string {
