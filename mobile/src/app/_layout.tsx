@@ -2,8 +2,10 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { PlayerProvider } from '@/lib/player';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -24,6 +26,7 @@ function RootNavigator() {
           name="item/[id]"
           options={{ title: 'Note', headerBackButtonDisplayMode: 'minimal' }}
         />
+        <Stack.Screen name="import" options={{ title: 'Import', presentation: 'modal' }} />
       </Stack.Protected>
       <Stack.Protected guard={status !== 'signedIn'}>
         <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -35,10 +38,14 @@ function RootNavigator() {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AuthProvider>
+          <PlayerProvider>
+            <RootNavigator />
+          </PlayerProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

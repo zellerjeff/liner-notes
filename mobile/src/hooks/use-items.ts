@@ -40,6 +40,18 @@ export async function refreshItems(opts: { spinner?: boolean } = {}) {
 
 let fetchStarted = false;
 
+/** Optimistically patch one item (e.g. its note) in place. */
+export function patchItem(itemId: number, patch: Partial<Item>) {
+  if (!snapshot.items) return;
+  set({ items: snapshot.items.map((i) => (i.id === itemId ? { ...i, ...patch } : i)) });
+}
+
+/** Optimistically drop one item. */
+export function removeItem(itemId: number) {
+  if (!snapshot.items) return;
+  set({ items: snapshot.items.filter((i) => i.id !== itemId) });
+}
+
 /** Clear the store on sign-out / sign-in so the list refetches for the new session. */
 export function resetItems() {
   fetchStarted = false;

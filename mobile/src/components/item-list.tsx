@@ -1,13 +1,18 @@
 import { router } from 'expo-router';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { useCallback } from 'react';
+import { RefreshControl, StyleSheet, Pressable, View } from 'react-native';
+import Animated, { useAnimatedRef } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Sortable from 'react-native-sortables';
 
 import { ItemCard } from '@/components/item-card';
+import { MiniPlayer } from '@/components/mini-player';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { useItems } from '@/hooks/use-items';
-import type { ItemKind } from '@/lib/types';
+import { publishItems, refreshItems, useItems } from '@/hooks/use-items';
+import { api } from '@/lib/api';
+import type { Item, ItemKind } from '@/lib/types';
 
 const EMPTY_COPY: Record<ItemKind, string> = {
   song: 'No songs yet. Paste a Spotify or Apple Music link to bring in the first ones.',
@@ -15,30 +20,69 @@ const EMPTY_COPY: Record<ItemKind, string> = {
 };
 
 export function ItemList({ kind }: { kind: ItemKind }) {
-  const { items, error, refreshing, refresh } = useItems(kind);
+  const { items, allItems, error, refreshing, refresh } = useItems(kind);
+  const scrollableRef = useAnimatedRef<Animated.ScrollView>();
+
+  // Long-press drag reorder: publish the new order instantly, then persist it;
+  // on failure re-fetch so the list snaps back to the server's truth.
+  const commitReorder = useCallback(
+    (ordered: Item[]) => {
+      const others = (allItems ?? []).filter((i) => i.kind !== kind);
+      publishItems([...others, ...ordered.map((i, pos) => ({ ...i, position: pos }))]);
+      api.reorder(kind, ordered.map((i) => i.id)).catch(() => refreshItems());
+    },
+    [allItems, kind]
+  );
+
+  const renderItem = useCallback(
+    ({ item }: { item: Item }) => (
+      <ItemCard item={item} onPress={() => router.push(`/item/${item.id}`)} />
+    ),
+    []
+  );
 
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
-        <FlatList
-          data={items ?? []}
-          keyExtractor={(item) => String(item.id)}
+        <Animated.ScrollView
+          ref={scrollableRef}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => refresh({ spinner: true })} />
-          }
-          renderItem={({ item }) => (
-            <ItemCard item={item} onPress={() => router.push(`/item/${item.id}`)} />
-          )}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-          ListEmptyComponent={
+          }>
+          {items && items.length > 0 ? (
+            <Sortable.Grid
+              columns={1}
+              data={items}
+              keyExtractor={(i: Item) => String(i.id)}
+              rowGap={Spacing.two}
+              scrollableRef={scrollableRef}
+              dragActivationDelay={200}
+              onDragEnd={({ data }) => commitReorder(data)}
+              renderItem={renderItem}
+            />
+          ) : (
             <View style={styles.empty}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.emptyText}>
                 {error ?? (items === null ? 'Loading…' : EMPTY_COPY[kind])}
               </ThemedText>
             </View>
-          }
-        />
+          )}
+        </Animated.ScrollView>
+
+        <View style={styles.overlay} pointerEvents="box-none">
+          <MiniPlayer />
+          <Pressable
+            accessibilityLabel={kind === 'song' ? 'Import songs' : 'Import albums'}
+            onPress={() => router.push(`/import?kind=${kind}`)}
+            style={styles.fabWrap}>
+            <ThemedView type="backgroundSelected" style={styles.fab}>
+              <ThemedText type="subtitle" style={styles.fabGlyph}>
+                +
+              </ThemedText>
+            </ThemedView>
+          </Pressable>
+        </View>
       </SafeAreaView>
     </ThemedView>
   );
@@ -53,10 +97,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-  },
-  separator: {
-    height: Spacing.two,
+    paddingBottom: BottomTabInset + 96,
   },
   empty: {
     paddingTop: 120,
@@ -65,5 +106,32 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: 'center',
+  },
+  overlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: BottomTabInset + Spacing.two,
+    gap: Spacing.two,
+  },
+  fabWrap: {
+    position: 'absolute',
+    right: Spacing.four,
+    bottom: 64,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  fabGlyph: {
+    lineHeight: 40,
   },
 });
