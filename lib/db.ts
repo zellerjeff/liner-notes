@@ -148,6 +148,18 @@ export async function upsertUser(
   return created!;
 }
 
+/** Permanently delete a user and all of their items (mobile account deletion). */
+export async function deleteUser(userId: number): Promise<void> {
+  const client = await db();
+  await client.batch(
+    [
+      { sql: "DELETE FROM items WHERE user_id = ?", args: [userId] },
+      { sql: "DELETE FROM users WHERE id = ?", args: [userId] },
+    ],
+    "write"
+  );
+}
+
 export async function getUserById(id: number): Promise<User | undefined> {
   return one<User>("SELECT * FROM users WHERE id = ?", [id]);
 }

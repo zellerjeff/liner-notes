@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/session";
-import { updateProfile } from "@/lib/db";
+import { deleteUser, updateProfile } from "@/lib/db";
 
 export async function PATCH(req: Request) {
   const user = await currentUser();
@@ -22,4 +22,12 @@ export async function PATCH(req: Request) {
 
   if (!result.ok) return NextResponse.json({ error: result.error }, { status: 422 });
   return NextResponse.json({ user: result.user });
+}
+
+/** Permanently delete the signed-in account and everything on it. */
+export async function DELETE() {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  await deleteUser(user.id);
+  return NextResponse.json({ ok: true });
 }
