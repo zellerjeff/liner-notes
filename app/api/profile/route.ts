@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { currentUser } from "@/lib/session";
 import { deleteUser, updateProfile } from "@/lib/db";
 
+/** The signed-in user's own profile (the mobile app refreshes it on launch). */
+export async function GET() {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });
+  return NextResponse.json({ user });
+}
+
 export async function PATCH(req: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Not signed in." }, { status: 401 });

@@ -1,6 +1,6 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, getToken } from '@/lib/api';
 import type { Item, ItemKind } from '@/lib/types';
 
 // One shared items store: both tabs (and, on tablets, both panes) read the same
@@ -40,9 +40,19 @@ export async function refreshItems(opts: { spinner?: boolean } = {}) {
 
 let fetchStarted = false;
 
+/** Clear the store on sign-out / sign-in so the list refetches for the new session. */
+export function resetItems() {
+  fetchStarted = false;
+  set({ items: null, error: null, refreshing: false });
+  if (subscribers.size > 0 && getToken()) {
+    fetchStarted = true;
+    refreshItems();
+  }
+}
+
 function subscribe(fn: () => void) {
   subscribers.add(fn);
-  if (!fetchStarted) {
+  if (!fetchStarted && getToken()) {
     fetchStarted = true;
     refreshItems();
   }

@@ -26,6 +26,14 @@ export class ApiError extends Error {
   }
 }
 
+// Called on a 401 from any signed-in endpoint (dead/expired token), so the
+// auth layer can sign out. Sign-in's own 401s don't trigger it.
+let unauthorizedHandler: (() => void) | null = null;
+
+export function setUnauthorizedHandler(fn: (() => void) | null) {
+  unauthorizedHandler = fn;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const t = getToken();
   const res = await fetch(`${API_URL}${path}`, {
@@ -44,18 +52,23 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     } catch {
       // keep the generic message
     }
+    if (res.status === 401 && !path.startsWith('/api/mobile/auth')) {
+      unauthorizedHandler?.();
+    }
     throw new ApiError(res.status, message);
   }
   return (await res.json()) as T;
 }
 
 export const api = {
-  /** Exchange a Google/Apple ID token for a long-lived API token. */
-  signIn: (provider: 'google' | 'apple', idToken: string, name?: string) =>
+  /** Exchange a Google/Apple ID token (or a demo name) for a long-lived API token. */
+  signIn: (provider: 'google' | 'apple' | 'demo', idToken: string, name?: string) =>
     request<{ token: string; user: User }>('/api/mobile/auth', {
       method: 'POST',
       body: JSON.stringify({ provider, idToken, name }),
     }),
+
+  getProfile: () => request<{ user: User }>('/api/profile'),
 
   listItems: () => request<{ items: Item[] }>('/api/items'),
 
