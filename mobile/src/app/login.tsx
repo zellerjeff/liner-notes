@@ -9,7 +9,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { ApiError } from '@/lib/api';
+import { API_URL, ApiError } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 
 WebBrowser.maybeCompleteAuthSession();
@@ -156,6 +156,14 @@ export default function LoginScreen() {
                 {error}
               </ThemedText>
             )}
+
+            <Pressable
+              accessibilityRole="link"
+              onPress={() => WebBrowser.openBrowserAsync(`${API_URL}/privacy`)}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.tagline}>
+                Privacy policy
+              </ThemedText>
+            </Pressable>
           </View>
         )}
       </SafeAreaView>

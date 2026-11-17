@@ -205,6 +205,15 @@ function ProfileForm({ user }: { user: User }) {
           </ThemedText>
         </Pressable>
       </ThemedView>
+
+      <Pressable
+        accessibilityRole="link"
+        onPress={() => WebBrowser.openBrowserAsync(`${API_URL}/privacy`)}
+        style={styles.deleteRow}>
+        <ThemedText type="small" themeColor="textSecondary">
+          Privacy policy
+        </ThemedText>
+      </Pressable>
     </>
   );
 }

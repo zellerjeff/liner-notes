@@ -209,7 +209,12 @@ export default async function Home() {
       <footer className="border-t border-ink/10 py-10">
         <div className="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size={26} />
-          <p className="text-sm text-ink-faint">Made for the songs that made you.</p>
+          <p className="text-sm text-ink-faint">
+            Made for the songs that made you.
+            <Link href="/privacy" className="ml-4 font-semibold text-ink-soft hover:text-ink">
+              Privacy
+            </Link>
+          </p>
         </div>
       </footer>
     </div>
