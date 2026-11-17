@@ -1,5 +1,5 @@
-import { ItemList } from '@/components/item-list';
+import { ItemsScreen } from '@/components/items-screen';
 
 export default function AlbumsScreen() {
-  return <ItemList kind="album" />;
+  return <ItemsScreen kind="album" />;
 }

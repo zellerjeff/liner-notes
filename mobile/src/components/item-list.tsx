@@ -9,7 +9,7 @@ import { ItemCard } from '@/components/item-card';
 import { MiniPlayer } from '@/components/mini-player';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Spacing, TopTabInset } from '@/constants/theme';
 import { publishItems, refreshItems, useItems } from '@/hooks/use-items';
 import { api } from '@/lib/api';
 import type { Item, ItemKind } from '@/lib/types';
@@ -19,7 +19,14 @@ const EMPTY_COPY: Record<ItemKind, string> = {
   album: 'No albums yet. Paste an album link for a record that deserves to be heard front to back.',
 };
 
-export function ItemList({ kind }: { kind: ItemKind }) {
+type ItemListProps = {
+  kind: ItemKind;
+  /** Tablet split view: select in place instead of pushing the editor screen. */
+  onSelect?: (item: Item) => void;
+  selectedId?: number;
+};
+
+export function ItemList({ kind, onSelect, selectedId }: ItemListProps) {
   const { items, allItems, error, refreshing, refresh } = useItems(kind);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
@@ -36,9 +43,13 @@ export function ItemList({ kind }: { kind: ItemKind }) {
 
   const renderItem = useCallback(
     ({ item }: { item: Item }) => (
-      <ItemCard item={item} onPress={() => router.push(`/item/${item.id}`)} />
+      <ItemCard
+        item={item}
+        selected={item.id === selectedId}
+        onPress={() => (onSelect ? onSelect(item) : router.push(`/item/${item.id}`))}
+      />
     ),
-    []
+    [onSelect, selectedId]
   );
 
   return (
@@ -97,6 +108,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: Spacing.three,
+    paddingTop: Spacing.three + TopTabInset,
     paddingBottom: BottomTabInset + 96,
   },
   empty: {

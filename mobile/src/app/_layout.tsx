@@ -21,7 +21,7 @@ function RootNavigator() {
   return (
     <Stack>
       <Stack.Protected guard={status === 'signedIn'}>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: 'Liner Notes' }} />
         <Stack.Screen
           name="item/[id]"
           options={{ title: 'Note', headerBackButtonDisplayMode: 'minimal' }}

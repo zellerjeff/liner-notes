@@ -14,7 +14,7 @@ function Artwork({ item }: { item: Item }) {
   const art = item.artwork_url ? (
     <Image source={{ uri: item.artwork_url }} style={styles.artwork} transition={100} />
   ) : (
-    <ThemedView type="backgroundSelected" style={styles.artwork} />
+    <ThemedView type="background" style={styles.artwork} />
   );
 
   if (!item.preview_url) return art;
@@ -34,12 +34,20 @@ function Artwork({ item }: { item: Item }) {
   );
 }
 
-export function ItemCard({ item, onPress }: { item: Item; onPress?: () => void }) {
+export function ItemCard({
+  item,
+  onPress,
+  selected,
+}: {
+  item: Item;
+  onPress?: () => void;
+  selected?: boolean;
+}) {
   return (
-    <Pressable onPress={onPress}>
+    <Pressable onPress={onPress} accessibilityState={{ selected: !!selected }}>
       {({ pressed }) => (
         <ThemedView
-          type={pressed ? 'backgroundSelected' : 'backgroundElement'}
+          type={pressed || selected ? 'backgroundSelected' : 'backgroundElement'}
           style={styles.card}>
           <Artwork item={item} />
           <View style={styles.text}>
