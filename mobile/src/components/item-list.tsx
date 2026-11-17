@@ -9,7 +9,7 @@ import { ItemCard } from '@/components/item-card';
 import { MiniPlayer } from '@/components/mini-player';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing, TopTabInset } from '@/constants/theme';
+import { Accent, BottomTabInset, Spacing, TopTabInset } from '@/constants/theme';
 import { publishItems, refreshItems, useItems } from '@/hooks/use-items';
 import { api } from '@/lib/api';
 import type { Item, ItemKind } from '@/lib/types';
@@ -27,7 +27,7 @@ type ItemListProps = {
 };
 
 export function ItemList({ kind, onSelect, selectedId }: ItemListProps) {
-  const { items, allItems, error, refreshing, refresh } = useItems(kind);
+  const { items, allItems, error, offline, refreshing, refresh } = useItems(kind);
   const scrollableRef = useAnimatedRef<Animated.ScrollView>();
 
   // Long-press drag reorder: publish the new order instantly, then persist it;
@@ -61,6 +61,11 @@ export function ItemList({ kind, onSelect, selectedId }: ItemListProps) {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => refresh({ spinner: true })} />
           }>
+          {offline && !!items?.length && (
+            <ThemedText type="small" themeColor="textSecondary" style={styles.offline}>
+              Offline — showing your saved list.
+            </ThemedText>
+          )}
           {items && items.length > 0 ? (
             <Sortable.Grid
               columns={1}
@@ -84,14 +89,15 @@ export function ItemList({ kind, onSelect, selectedId }: ItemListProps) {
         <View style={styles.overlay} pointerEvents="box-none">
           <MiniPlayer />
           <Pressable
+            accessibilityRole="button"
             accessibilityLabel={kind === 'song' ? 'Import songs' : 'Import albums'}
             onPress={() => router.push(`/import?kind=${kind}`)}
             style={styles.fabWrap}>
-            <ThemedView type="backgroundSelected" style={styles.fab}>
+            <View style={styles.fab}>
               <ThemedText type="subtitle" style={styles.fabGlyph}>
                 +
               </ThemedText>
-            </ThemedView>
+            </View>
           </Pressable>
         </View>
       </SafeAreaView>
@@ -110,6 +116,10 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     paddingTop: Spacing.three + TopTabInset,
     paddingBottom: BottomTabInset + 96,
+  },
+  offline: {
+    textAlign: 'center',
+    paddingBottom: Spacing.two,
   },
   empty: {
     paddingTop: 120,
@@ -135,6 +145,7 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 28,
+    backgroundColor: Accent,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -145,5 +156,6 @@ const styles = StyleSheet.create({
   },
   fabGlyph: {
     lineHeight: 40,
+    color: '#FFFFFF',
   },
 });

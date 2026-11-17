@@ -14,6 +14,7 @@ export function MiniPlayer() {
     <ThemedView type="backgroundSelected" style={styles.bar}>
       <Pressable
         onPress={() => playItem(nowPlaying)}
+        accessibilityRole="button"
         accessibilityLabel={playing ? 'Pause' : 'Play'}
         hitSlop={8}>
         <ThemedText type="smallBold" style={styles.glyph}>
@@ -30,7 +31,11 @@ export function MiniPlayer() {
           </ThemedText>
         )}
       </View>
-      <Pressable onPress={stop} accessibilityLabel="Close player" hitSlop={8}>
+      <Pressable
+        onPress={stop}
+        accessibilityRole="button"
+        accessibilityLabel="Close player"
+        hitSlop={8}>
         <ThemedText type="smallBold" themeColor="textSecondary" style={styles.glyph}>
           ✕
         </ThemedText>

@@ -89,7 +89,7 @@ export default function ImportScreen() {
           </ThemedText>
         </View>
       ) : (
-        <Pressable onPress={runImport} disabled={!url.trim()}>
+        <Pressable accessibilityRole="button" onPress={runImport} disabled={!url.trim()}>
           <ThemedView type="backgroundElement" style={styles.button}>
             <ThemedText type="smallBold">Import</ThemedText>
           </ThemedView>

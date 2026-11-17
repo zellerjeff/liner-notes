@@ -57,7 +57,7 @@ function GoogleButton({
   };
 
   return (
-    <Pressable disabled={!request} onPress={signInGoogle}>
+    <Pressable accessibilityRole="button" disabled={!request} onPress={signInGoogle}>
       <ThemedView type="backgroundElement" style={styles.button}>
         <ThemedText type="smallBold">Continue with Google</ThemedText>
       </ThemedView>
@@ -143,7 +143,7 @@ export default function LoginScreen() {
                   autoCapitalize="words"
                   onSubmitEditing={signInDemo}
                 />
-                <Pressable onPress={signInDemo}>
+                <Pressable accessibilityRole="button" onPress={signInDemo}>
                   <ThemedView type="backgroundElement" style={styles.button}>
                     <ThemedText type="smallBold">Demo sign-in</ThemedText>
                   </ThemedView>

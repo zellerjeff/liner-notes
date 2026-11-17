@@ -13,7 +13,7 @@ import {
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-import { patchItem, removeItem, useItems } from '@/hooks/use-items';
+import { noteSaved, queueNote, removeItem, useItems } from '@/hooks/use-items';
 import { useTheme } from '@/hooks/use-theme';
 import { api } from '@/lib/api';
 import { confirmDestructive } from '@/lib/confirm';
@@ -48,9 +48,10 @@ function EditorBody({ item, onDeleted }: { item: Item; onDeleted?: () => void })
       try {
         await api.updateNote(item.id, note);
         lastSaved.current = note;
-        patchItem(item.id, { note });
+        noteSaved(item.id, note);
         setSaveState(latest.current === note ? 'saved' : 'saving');
       } catch {
+        queueNote(item.id, note);
         setSaveState('error');
         retryTimer = setTimeout(() => setRetry((r) => r + 1), RETRY_MS);
       }
@@ -69,8 +70,8 @@ function EditorBody({ item, onDeleted }: { item: Item; onDeleted?: () => void })
       if (deleted.current || pending === lastSaved.current) return;
       api
         .updateNote(id, pending)
-        .then(() => patchItem(id, { note: pending }))
-        .catch(() => {});
+        .then(() => noteSaved(id, pending))
+        .catch(() => queueNote(id, pending));
     };
   }, [item.id]);
 
@@ -116,7 +117,7 @@ function EditorBody({ item, onDeleted }: { item: Item; onDeleted?: () => void })
               </ThemedText>
             )}
             {!!item.preview_url && (
-              <Pressable onPress={() => playItem(item)}>
+              <Pressable accessibilityRole="button" onPress={() => playItem(item)}>
                 <ThemedText type="small" themeColor="textSecondary">
                   {isCurrent && playing ? '❚❚ Pause preview' : '▶ Play 30-second preview'}
                 </ThemedText>
@@ -141,10 +142,10 @@ function EditorBody({ item, onDeleted }: { item: Item; onDeleted?: () => void })
             {saveState === 'saving'
               ? 'Saving…'
               : saveState === 'error'
-                ? 'Not saved yet — will retry.'
+                ? 'Saved on this device — will sync when online.'
                 : 'Saved'}
           </ThemedText>
-          <Pressable onPress={onDelete} hitSlop={8}>
+          <Pressable accessibilityRole="button" onPress={onDelete} hitSlop={8}>
             <ThemedText type="small" style={styles.delete}>
               Remove from list
             </ThemedText>

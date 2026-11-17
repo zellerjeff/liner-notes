@@ -1,56 +1,84 @@
-# Welcome to your Expo app 👋
+# Liner Notes — mobile app
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+The iOS and Android app for [Liner Notes](../README.md): one Expo (React Native) codebase,
+with a phone layout and a tablet split-view layout chosen from the live window width.
+It is a second client on the website's existing JSON API — no logic is duplicated here.
 
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Running it
 
 ```bash
-npm run reset-project
+export PATH="$HOME/.local/node22/bin:$PATH"   # if node isn't on your PATH
+cd liner-notes && npm run dev                 # the API, on http://localhost:3000
+cd liner-notes/mobile && npx expo start       # then press w (web), i (iOS), a (Android)
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+`.env` points the app at `http://localhost:3000`; EAS builds override it with the production
+URL (see `eas.json`). In dev builds the login screen offers **Demo sign-in**, which works
+whenever the site's demo mode is on (the local default).
 
-### Other setup steps
+The web target is a development vehicle only — handy for checking layout and data flow
+without a simulator. Gestures, the keyboard, audio session behaviour, and native sign-in
+need a real build.
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+## What's where
 
-## Learn more
+| Path | What |
+| --- | --- |
+| `src/app/` | Routes: `(tabs)/` Songs · Albums · My Page, `item/[id]` editor, `import` modal, `login` |
+| `src/components/items-screen.tsx` | Phone list vs. tablet split view |
+| `src/components/note-editor.tsx` | Autosaving note editor (shared by both layouts) |
+| `src/hooks/use-items.ts` | Item store: disk cache, offline note queue, refresh on foreground |
+| `src/hooks/use-layout.ts` | `phone` / `tablet` from window width (≥ 700dp is tablet) |
+| `src/lib/auth.tsx` | Session: SecureStore token, sign-in exchange, sign-out on 401 |
+| `src/lib/api.ts` | Typed client for the site's `/api` routes |
+| `assets/src/*.svg` | Icon and splash sources (PNG renders live in `assets/images/`) |
 
-To learn more about developing your project with Expo, look at the following resources:
+## Before the first device build
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+These need accounts only the owner can create:
 
-## Join the community
+1. **Expo account** — `npx eas-cli@latest login`, then `npx eas-cli@latest init` here to link
+   the project.
+2. **Google sign-in** — in the Google Cloud console (same project as the website's OAuth
+   client) create an **iOS** client ID (bundle `com.linernotes.app`) and an **Android** client
+   ID (package `com.linernotes.app` + the SHA-1 EAS prints for your keystore). Then:
+   - here, in `.env`: `EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID=…` and
+     `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID=…` (`app.config.ts` registers the iOS redirect
+     scheme automatically);
+   - on Vercel: `GOOGLE_MOBILE_CLIENT_IDS=<ios id>,<android id>` so the API accepts their
+     ID tokens.
+3. **Sign in with Apple** (required by App Store review because Google sign-in is offered)
+   — needs the Apple Developer Program. The capability is already declared in `app.json`;
+   EAS enables it on the App ID. If the bundle ID ever changes, set `APPLE_APP_BUNDLE_ID`
+   on Vercel to match.
+4. **Stores** — Apple Developer Program (USD 99/yr) and a Google Play Console account
+   (USD 25 once).
 
-Join our community of developers creating universal apps.
+## Building
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx eas-cli@latest build --profile development-simulator --platform ios   # simulator build
+npx eas-cli@latest build --profile development --platform all             # dev clients for devices
+npx eas-cli@latest build --profile production --platform all              # store builds
+npx eas-cli@latest submit --platform all                                  # TestFlight + Play
+```
+
+## Checks
+
+```bash
+npx tsc --noEmit
+npx expo lint
+npx expo-doctor
+```
+
+## Still to verify on a real device
+
+Everything below is implemented but could not be exercised from the web target:
+
+- Long-press drag to reorder (the reorder request itself is verified)
+- Native Google and Apple sign-in (the demo flow and token exchange are verified)
+- Keyboard avoidance in the note editor, the share sheet, and the in-app browser
+- Preview audio with the silent switch, and behaviour when the app backgrounds
+- iPad Split View / Slide Over and Android split-screen resizing (verified by resizing the
+  web target between 375px and 1024px)
+- Swipe-to-delete on list rows is not built; delete lives in the note editor

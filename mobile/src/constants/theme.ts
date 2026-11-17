@@ -7,20 +7,24 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+// The website's palette (liner-notes/app/globals.css): cream paper, ink text,
+// coral accent — with a dark counterpart built on the same ink.
+export const Accent = '#FF5D73';
+
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#27222E',
+    background: '#FFF9F1',
+    backgroundElement: '#FFFFFF',
+    backgroundSelected: '#FFE9E3',
+    textSecondary: '#6F6878',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#FFF9F1',
+    background: '#17131C',
+    backgroundElement: '#27222E',
+    backgroundSelected: '#3A3344',
+    textSecondary: '#A49DAF',
   },
 } as const;
 

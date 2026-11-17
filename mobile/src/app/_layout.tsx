@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { Accent, Colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { PlayerProvider } from '@/lib/player';
 
@@ -35,11 +36,27 @@ function RootNavigator() {
   );
 }
 
+function navTheme(scheme: 'light' | 'dark') {
+  const base = scheme === 'dark' ? DarkTheme : DefaultTheme;
+  const palette = Colors[scheme];
+  return {
+    ...base,
+    colors: {
+      ...base.colors,
+      primary: Accent,
+      background: palette.background,
+      card: palette.background,
+      text: palette.text,
+      border: palette.backgroundSelected,
+    },
+  };
+}
+
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+      <ThemeProvider value={navTheme(colorScheme === 'dark' ? 'dark' : 'light')}>
         <AuthProvider>
           <PlayerProvider>
             <RootNavigator />

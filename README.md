@@ -60,6 +60,20 @@ SPOTIFY_CLIENT_SECRET=...
 The importer automatically prefers the official API when keys are present and falls back to
 the public pages if not.
 
+## Mobile apps
+
+The iOS and Android app lives in [`mobile/`](mobile/README.md) (Expo / React Native). It is a
+second client on this site's API: it signs in by posting a Google or Apple ID token to
+`POST /api/mobile/auth` and then sends the returned token as `Authorization: Bearer` on the
+same `/api` routes the website uses. Server-side settings it adds:
+
+```
+GOOGLE_MOBILE_CLIENT_IDS=<ios client id>,<android client id>   # accepted beside AUTH_GOOGLE_ID
+APPLE_APP_BUNDLE_ID=com.linernotes.app                         # optional; this is the default
+```
+
+Demo login for the app obeys the same `ALLOW_DEMO_LOGIN` switch as the site.
+
 ## How it's built
 
 - **Next.js 16** (App Router) + **Tailwind CSS 4**, TypeScript throughout.

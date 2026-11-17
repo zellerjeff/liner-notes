@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
@@ -7,7 +8,9 @@ import { Spacing } from '@/constants/theme';
 import { usePlayer } from '@/lib/player';
 import type { Item } from '@/lib/types';
 
-function Artwork({ item }: { item: Item }) {
+// The artwork (play/pause) and the text (open the note) are sibling controls:
+// nesting one button inside the other hides the inner one from screen readers.
+function Artwork({ item, onOpen }: { item: Item; onOpen?: () => void }) {
   const { nowPlaying, playing, playItem } = usePlayer();
   const isCurrent = nowPlaying?.id === item.id;
 
@@ -17,12 +20,22 @@ function Artwork({ item }: { item: Item }) {
     <ThemedView type="background" style={styles.artwork} />
   );
 
-  if (!item.preview_url) return art;
+  if (!item.preview_url) {
+    // No preview: the artwork is just more of the card's tap target.
+    return (
+      <Pressable onPress={onOpen} accessible={false}>
+        {art}
+      </Pressable>
+    );
+  }
 
   return (
     <Pressable
       onPress={() => playItem(item)}
-      accessibilityLabel={isCurrent && playing ? 'Pause preview' : 'Play preview'}
+      accessibilityRole="button"
+      accessibilityLabel={
+        isCurrent && playing ? `Pause preview of ${item.title}` : `Play preview of ${item.title}`
+      }
       hitSlop={6}>
       <View>
         {art}
@@ -43,33 +56,41 @@ export function ItemCard({
   onPress?: () => void;
   selected?: boolean;
 }) {
+  const [pressed, setPressed] = useState(false);
+
   return (
-    <Pressable onPress={onPress} accessibilityState={{ selected: !!selected }}>
-      {({ pressed }) => (
-        <ThemedView
-          type={pressed || selected ? 'backgroundSelected' : 'backgroundElement'}
-          style={styles.card}>
-          <Artwork item={item} />
-          <View style={styles.text}>
-            <ThemedText type="smallBold" numberOfLines={1}>
-              {item.title}
-            </ThemedText>
-            {!!item.artist && (
-              <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
-                {item.artist}
-              </ThemedText>
-            )}
-            <ThemedText
-              type="small"
-              themeColor={item.note ? 'text' : 'textSecondary'}
-              numberOfLines={1}
-              style={styles.note}>
-              {item.note || 'Add the story…'}
-            </ThemedText>
-          </View>
-        </ThemedView>
-      )}
-    </Pressable>
+    <ThemedView
+      type={pressed || selected ? 'backgroundSelected' : 'backgroundElement'}
+      style={styles.card}>
+      <Artwork item={item} onOpen={onPress} />
+      <Pressable
+        style={styles.text}
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        accessibilityRole="button"
+        accessibilityLabel={[item.title, item.artist, item.note ? 'has a note' : 'no note yet']
+          .filter(Boolean)
+          .join(', ')}
+        accessibilityHint="Opens the note. Hold and drag to reorder."
+        accessibilityState={{ selected: !!selected }}>
+        <ThemedText type="smallBold" numberOfLines={1}>
+          {item.title}
+        </ThemedText>
+        {!!item.artist && (
+          <ThemedText type="small" themeColor="textSecondary" numberOfLines={1}>
+            {item.artist}
+          </ThemedText>
+        )}
+        <ThemedText
+          type="small"
+          themeColor={item.note ? 'text' : 'textSecondary'}
+          numberOfLines={1}
+          style={styles.note}>
+          {item.note || 'Add the story…'}
+        </ThemedText>
+      </Pressable>
+    </ThemedView>
   );
 }
 

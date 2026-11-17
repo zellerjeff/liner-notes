@@ -114,12 +114,12 @@ function ProfileForm({ user }: { user: User }) {
           {SHARE_HOST}/w/{user.slug}
         </ThemedText>
         <View style={styles.row}>
-          <Pressable onPress={share} style={styles.flex}>
+          <Pressable accessibilityRole="button" onPress={share} style={styles.flex}>
             <ThemedView type="backgroundSelected" style={styles.button}>
               <ThemedText type="smallBold">{Platform.OS === 'web' ? 'Copy link' : 'Share'}</ThemedText>
             </ThemedView>
           </Pressable>
-          <Pressable onPress={() => WebBrowser.openBrowserAsync(shareUrl)} style={styles.flex}>
+          <Pressable accessibilityRole="button" onPress={() => WebBrowser.openBrowserAsync(shareUrl)} style={styles.flex}>
             <ThemedView type="backgroundSelected" style={styles.button}>
               <ThemedText type="smallBold">View page</ThemedText>
             </ThemedView>
@@ -179,7 +179,7 @@ function ProfileForm({ user }: { user: User }) {
             maxLength={40}
           />
         </View>
-        <Pressable onPress={save} disabled={!dirty || saving}>
+        <Pressable accessibilityRole="button" onPress={save} disabled={!dirty || saving}>
           <ThemedView
             type="backgroundSelected"
             style={[styles.button, (!dirty || saving) && styles.disabled]}>
@@ -194,12 +194,12 @@ function ProfileForm({ user }: { user: User }) {
       </ThemedView>
 
       <ThemedView type="backgroundElement" style={styles.card}>
-        <Pressable onPress={signOut}>
+        <Pressable accessibilityRole="button" onPress={signOut}>
           <ThemedView type="backgroundSelected" style={styles.button}>
             <ThemedText type="smallBold">Sign out</ThemedText>
           </ThemedView>
         </Pressable>
-        <Pressable onPress={deleteAccount} style={styles.deleteRow}>
+        <Pressable accessibilityRole="button" onPress={deleteAccount} style={styles.deleteRow}>
           <ThemedText type="small" style={styles.error}>
             Delete account
           </ThemedText>
